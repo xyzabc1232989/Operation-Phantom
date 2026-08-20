@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OPERATION PHANTOM | Digital Threat Assessment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <div class="app-container" id="app">
+        <!-- Landing Page -->
+        <div v-if="step === 'landing'" class="landing">
+            <div class="landing-content">
+                <div class="logo">
+                    <span class="logo-icon">⏣</span>
+                    <span class="logo-text">PHANTOM</span>
+                </div>
+                <h1>Digital Threat<br>Assessment Platform</h1>
+                <p>Understand your digital exposure.</p>
+                <button class="btn-primary btn-large" @click="beginAssessment">Begin Assessment</button>
+            </div>
+        </div>
+
+        <!-- Registration -->
+        <div v-else-if="step === 'register'" class="register-container">
+            <div class="card register-card">
+                <div class="card-header">
+                    <span class="step-indicator">Step 1 / 8</span>
+                    <h2>Subject Registration</h2>
+                </div>
+                <div class="form-group">
+                    <label>Codename</label>
+                    <input type="text" v-model="codename" placeholder="SHADOW" class="input-code">
+                </div>
+                <div class="phantom-id" v-if="phantomId">
+                    <span class="label">Phantom ID</span>
+                    <span class="value monospace">{{ phantomId }}</span>
+                </div>
+                <button class="btn-primary" @click="nextFromRegister" :disabled="!codename">Continue</button>
+            </div>
+        </div>
+
+        <!-- Assessment Modules -->
+        <div v-else-if="step === 'password'" class="assessment-container">
+            <div class="module-nav">
+                <div class="progress-tracker">
+                    <div class="progress-step" :class="{ active: currentModule >= 1 }">1</div>
+                    <div class="progress-line" :class="{ active: currentModule > 1 }"></div>
+                    <div class="progress-step" :class="{ active: currentModule >= 2 }">2</div>
+                    <div class="progress-line" :class="{ active: currentModule > 2 }"></div>
+                    <div class="progress-step" :class="{ active: currentModule >= 3 }">3</div>
+                    <div class="progress-line" :class="{ active: currentModule > 3 }"></div>
+                    <div class="progress-step" :class="{ active: currentModule >= 4 }">4</div>
+                    <div class="progress-line" :class="{ active: currentModule > 4 }"></div>
+                    <div class="progress-step" :class="{ active: currentModule >= 5 }">5</div>
+                    <div class="progress-line" :class="{ active: currentModule > 5 }"></div>
+                    <div class="progress-step" :class="{ active: currentModule >= 6 }">6</div>
+                    <div class="progress-line" :class="{ active: currentModule > 6 }"></div>
+                    <div class="progress-step" :class="{ active: currentModule >= 7 }">7</div>
+                    <div class="progress-line" :class="{ active: currentModule > 7 }"></div>
+                    <div class="progress-step" :class="{ active: currentModule >= 8 }">8</div>
+                </div>
+            </div>
+
+            <!-- Module 1: Password Intelligence -->
+            <div v-if="currentModule === 1" class="module-card">
+                <div class="module-header">
+                    <h2>Password Intelligence</h2>
+                    <span class="badge">Module 1 / 8</span>
+                </div>
+                <div class="form-group">
+                    <label>Enter password to analyze</label>
+                    <input type="password" v-model="password" @input="analyzePassword" placeholder="Enter password..." class="input-large">
+                </div>
+                <div v-if="passwordStrength" class="password-metrics">
+                    <div class="metric-circle">
+                        <svg viewBox="0 0 100 100" class="circular-chart">
+                            <circle cx="50" cy="50" r="45" class="circle-bg"/>
+                            <circle cx="50" cy="50" r="45" class="circle" :style="{ strokeDasharray: `${passwordStrength.strength}`, strokeDashoffset: '100' }"/>
+                            <text x="50" y="50" class="percentage">{{ passwordStrength.strength }}%</text>
+                        </svg>
+                    </div>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <span class="metric-label">Crack Time</span>
+                            <span class="metric-value">{{ passwordStrength.crack_time }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Entropy</span>
+                            <span class="metric-value">{{ passwordStrength.entropy }} bits</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Length</span>
+                            <span class="metric-value">{{ passwordStrength.length }}</span>
+                        </div>
+                    </div>
+                    <div v-if="passwordStrength.weaknesses && passwordStrength.weaknesses.length" class="weaknesses">
+                        <span class="warning-badge">Weaknesses</span>
+                        <ul>
+                            <li v-for="w in passwordStrength.weaknesses">{{ w }}</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="module-actions">
+                    <button class="btn-next" @click="nextModule" :disabled="!passwordStrength">Next</button>
+                </div>
+            </div>
+
+            <!-- Module 2: Typing Biometrics -->
+            <div v-else-if="currentModule === 2" class="module-card">
+                <div class="module-header">
+                    <h2>Typing Biometrics</h2>
+                    <span class="badge">Module 2 / 8</span>
+                </div>
+                <div class="form-group">
+                    <label>Type the phrase</label>
+                    <div class="phrase-display">"CyberSecurity2026"</div>
+                    <input type="text" v-model="typingInput" @keydown="recordKeyDown" @keyup="recordKeyUp" class="input-large" placeholder="Type here...">
+                </div>
+                <div v-if="typingMetrics" class="typing-metrics">
+                    <div class="metrics-row">
+                        <div class="metric-card">
+                            <span class="metric-label">Typing Consistency</span>
+                            <span class="metric-number">{{ typingMetrics.consistency }}%</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Typing Speed</span>
+                            <span class="metric-number">{{ typingMetrics.wpm }} WPM</span>
+                        </div>
+                        <div class="metric-card">
+                            <span class="metric-label">Digital Signature</span>
+                            <span class="metric-code">{{ typingMetrics.signature ? typingMetrics.signature : 'Pending' }}</span>
+                        </div>
+                    </div>
+                    <div v-if="typingMetrics.latencies && typingMetrics.latencies.length" class="latency-view">
+                        <span class="label">Key Latencies (ms)</span>
+                        <div class="latency-bars">
+                            <div v-for="(lat, idx) in typingMetrics.latencies.slice(0, 8)" :key="idx" class="latency-bar" :style="{ width: (lat / 200 * 100) + '%' }"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="module-actions">
+                    <button class="btn-prev" @click="prevModule">Back</button>
+                    <button class="btn-next" @click="nextModule" :disabled="!typingMetrics">Next</button>
+                </div>
+            </div>
+
+            <!-- Module 3: Behavioral Risk Assessment -->
+            <div v-else-if="currentModule === 3" class="module-card">
+                <div class="module-header">
+                    <h2>Behavioral Risk Assessment</h2>
+                    <span class="badge">Module 3 / 8</span>
+                </div>
+                <div class="question-group">
+                    <div class="question">
+                        <span>Do you reuse passwords across multiple accounts?</span>
+                        <div class="radio-group">
+                            <label><input type="radio" value="yes" v-model="behavioral.reuse_passwords"> Yes</label>
+                            <label><input type="radio" value="no" v-model="behavioral.reuse_passwords"> No</label>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <span>Do you use Two-Factor Authentication (2FA)?</span>
+                        <div class="radio-group">
+                            <label><input type="radio" value="yes" v-model="behavioral.uses_2fa"> Yes</label>
+                            <label><input type="radio" value="no" v-model="behavioral.uses_2fa"> No</label>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <span>Do you use public WiFi networks?</span>
+                        <div class="radio-group">
+                            <label><input type="radio" value="yes" v-model="behavioral.uses_public_wifi"> Yes</label>
+                            <label><input type="radio" value="no" v-model="behavioral.uses_public_wifi"> No</label>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <span>Do you verify links before clicking?</span>
+                        <div class="radio-group">
+                            <label><input type="radio" value="yes" v-model="behavioral.verifies_links"> Yes</label>
+                            <label><input type="radio" value="no" v-model="behavioral.verifies_links"> No</label>
+                        </div>
+                    </div>
+                    <div class="question">
+                        <span>Do you use a password manager?</span>
+                        <div class="radio-group">
+                            <label><input type="radio" value="yes" v-model="behavioral.uses_password_manager"> Yes</label>
+                            <label><input type="radio" value="no" v-model="behavioral.uses_password_manager"> No</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="module-actions">
+                    <button class="btn-prev" @click="prevModule">Back</button>
+                    <button class="btn-next" @click="analyzeBehavioral">Next</button>
+                </div>
+            </div>
+
+            <!-- Module 4: USB Intelligence -->
+            <div v-else-if="currentModule === 4" class="module-card">
+                <div class="module-header">
+                    <h2>USB Intelligence</h2>
+                    <span class="badge">Module 4 / 8</span>
+                </div>
+                <button class="btn-secondary" @click="scanUSB" :disabled="scanningUSB">
+                    {{ scanningUSB ? 'Scanning...' : 'Detect USB Devices' }}
+                </button>
+                <div v-if="usbDevices.length" class="usb-list">
+                    <div v-for="device in usbDevices" :key="device.mount_point" class="usb-card">
+                        <div class="usb-icon">⏣</div>
+                        <div class="usb-info">
+                            <strong>{{ device.name }}</strong>
+                            <span>{{ device.size_gb }} GB</span>
+                            <span class="monospace">{{ device.mount_point }}</span>
+                        </div>
+                        <button class="btn-small" @click="selectUSB(device)">Select</button>
+                    </div>
+                </div>
+                <div class="module-actions">
+                    <button class="btn-prev" @click="prevModule">Back</button>
+                    <button class="btn-next" @click="nextModule" :disabled="!selectedUSB">Next</button>
+                </div>
+            </div>
+
+            <!-- Module 5: Suspicious File Detection -->
+            <div v-else-if="currentModule === 5" class="module-card">
+                <div class="module-header">
+                    <h2>Suspicious File Detection</h2>
+                    <span class="badge">Module 5 / 8</span>
+                </div>
+                <button class="btn-secondary" @click="scanFiles" :disabled="scanningFiles">
+                    {{ scanningFiles ? 'Scanning...' : 'Scan for Suspicious Files' }}
+                </button>
+                <div v-if="fileScan" class="file-scan-results">
+                    <div class="risk-summary">
+                        <span class="label">Suspicious Files Found</span>
+                        <span class="value danger">{{ (fileScan.executables || 0) + (fileScan.scripts || 0) }}</span>
+                    </div>
+                    <div class="file-categories">
+                        <div class="category-item">
+                            <span>Executables</span>
+                            <span>{{ fileScan.executables || 0 }}</span>
+                        </div>
+                        <div class="category-item">
+                            <span>Scripts</span>
+                            <span>{{ fileScan.scripts || 0 }}</span>
+                        </div>
+                        <div class="category-item">
+                            <span>Documents</span>
+                            <span>{{ fileScan.documents || 0 }}</span>
+                        </div>
+                        <div class="category-item">
+                            <span>Images</span>
+                            <span>{{ fileScan.images || 0 }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="module-actions">
+                    <button class="btn-prev" @click="prevModule">Back</button>
+                    <button class="btn-next" @click="nextModule">Next</button>
+                </div>
+            </div>
+
+            <!-- Module 6: Hidden File Discovery -->
+            <div v-else-if="currentModule === 6" class="module-card">
+                <div class="module-header">
+                    <h2>Hidden File Discovery</h2>
+                    <span class="badge">Module 6 / 8</span>
+                </div>
+                <button class="btn-secondary" @click="scanHidden" :disabled="scanningHidden">
+                    {{ scanningHidden ? 'Scanning...' : 'Discover Hidden Files' }}
+                </button>
+                <div v-if="hiddenScan" class="hidden-results">
+                    <div class="metric">
+                        <span class="label">Hidden Files Found</span>
+                        <span class="value">{{ hiddenScan.hidden_files || 0 }}</span>
+                    </div>
+                    <div v-if="hiddenScan.sample && hiddenScan.sample.length" class="sample-list">
+                        <div v-for="file in hiddenScan.sample" :key="file.name" class="sample-item">
+                            {{ file.name }}
+                        </div>
+                    </div>
+                </div>
+                <div class="module-actions">
+                    <button class="btn-prev" @click="prevModule">Back</button>
+                    <button class="btn-next" @click="nextModule">Next</button>
+                </div>
+            </div>
+
+            <!-- Module 7: Device Intelligence -->
+            <div v-else-if="currentModule === 7" class="module-card">
+                <div class="module-header">
+                    <h2>Device Intelligence</h2>
+                    <span class="badge">Module 7 / 8</span>
+                </div>
+                <button class="btn-secondary" @click="scanDevice" :disabled="scanningDevice">
+                    {{ scanningDevice ? 'Scanning...' : 'Analyze Device' }}
+                </button>
+                <div v-if="deviceProfile" class="device-profile">
+                    <div class="profile-grid">
+                        <div class="profile-item">
+                            <span class="label">Files</span>
+                            <span class="value">{{ (deviceProfile.files || 0).toLocaleString() }}</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="label">Folders</span>
+                            <span class="value">{{ (deviceProfile.folders || 0).toLocaleString() }}</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="label">Largest File</span>
+                            <span class="value">{{ deviceProfile.largest_file || 'None' }}</span>
+                        </div>
+                        <div class="profile-item">
+                            <span class="label">Total Data</span>
+                            <span class="value">{{ deviceProfile.total_data || '0 B' }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="module-actions">
+                    <button class="btn-prev" @click="prevModule">Back</button>
+                    <button class="btn-next" @click="nextModule">Next</button>
+                </div>
+            </div>
+
+            <!-- Module 8: Intelligence Dashboard -->
+            <div v-else-if="currentModule === 8" class="module-card dashboard-card">
+                <div class="module-header">
+                    <h2>Intelligence Dashboard</h2>
+                    <span class="badge">Module 8 / 8</span>
+                </div>
+                <div v-if="report" class="dashboard">
+                    <div class="score-section">
+                        <div class="main-score">
+                            <svg viewBox="0 0 200 200" class="score-ring">
+                                <circle cx="100" cy="100" r="90" class="ring-bg"/>
+                                <circle cx="100" cy="100" r="90" class="ring-progress" :style="{ strokeDasharray: `${report.overall_score * 2.827}`, strokeDashoffset: '0' }"/>
+                                <text x="100" y="115" class="score-text">{{ report.overall_score }}</text>
+                                <text x="100" y="140" class="score-label">/ 100</text>
+                            </svg>
+                            <div class="threat-badge" :class="report.threat_exposure.toLowerCase()">
+                                {{ report.threat_exposure }}
+                            </div>
+                        </div>
+                        <div class="components-grid">
+                            <div class="component-card" v-for="(score, name) in report.components" :key="name">
+                                <span class="component-name">{{ name.charAt(0).toUpperCase() + name.slice(1) }}</span>
+                                <div class="component-bar">
+                                    <div class="bar-fill" :style="{ width: score + '%' }"></div>
+                                </div>
+                                <span class="component-score">{{ score }}%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="recommendations-section">
+                        <h3>PHANTOM RECOMMENDATIONS</h3>
+                        <div class="recommendations-list">
+                            <div v-for="rec in report.recommendations" :key="rec.title" class="recommendation-item">
+                                <span class="priority-badge" :class="rec.priority.toLowerCase()">{{ rec.priority }}</span>
+                                <div>
+                                    <strong>{{ rec.title }}</strong>
+                                    <p>{{ rec.description }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="report-footer">
+                        <span>Subject: {{ report.subject }}</span>
+                        <span>Phantom ID: {{ report.phantom_id }}</span>
+                        <span>Generated: {{ new Date(report.generated_at).toLocaleString() }}</span>
+                    </div>
+                </div>
+                <div class="module-actions">
+                    <button class="btn-prev" @click="prevModule">Back</button>
+                    <button class="btn-primary" @click="resetAssessment">New Assessment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
